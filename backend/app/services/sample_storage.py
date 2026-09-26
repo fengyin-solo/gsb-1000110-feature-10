@@ -13,22 +13,55 @@ NEGATIVE_ACTIONS = []
 
 
 class SampleStorageService:
+    def _filter(
+        self,
+        *,
+        keyword: str | None = None,
+        sample_no: str | None = None,
+        location: str | None = None,
+        status: str | None = None,
+    ) -> list[dict[str, Any]]:
+        rows = store.rows(MODULE)
+        if keyword:
+            rows = [row for row in rows if keyword in str(row.get("留存编号", ""))]
+        if sample_no:
+            rows = [row for row in rows if sample_no in str(row.get("样品编号", ""))]
+        if location:
+            rows = [row for row in rows if location in str(row.get("留存位置", ""))]
+        if status:
+            rows = [row for row in rows if row.get("status") == status]
+        return rows
+
     def list_entries(
         self,
         *,
         keyword: str | None = None,
+        sample_no: str | None = None,
+        location: str | None = None,
         status: str | None = None,
         page: int = 1,
         size: int = 20,
     ) -> tuple[list[dict[str, Any]], int]:
-        rows = store.rows(MODULE)
-        if keyword:
-            rows = [row for row in rows if keyword in str(row.get("留存编号", ""))]
-        if status:
-            rows = [row for row in rows if row.get("status") == status]
+        rows = self._filter(keyword=keyword, sample_no=sample_no, location=location, status=status)
         total = len(rows)
         start = max(page - 1, 0) * size
         return rows[start:start + size], total
+
+    def summarize(
+        self,
+        *,
+        keyword: str | None = None,
+        sample_no: str | None = None,
+        location: str | None = None,
+    ) -> dict[str, Any]:
+        """概览口径：跟随当前检索条件，但不含状态筛选，保证各状态卡片分布完整。"""
+        rows = self._filter(keyword=keyword, sample_no=sample_no, location=location)
+        counts = {status: 0 for status in STATUS_ORDER}
+        for row in rows:
+            status = str(row.get("status") or "")
+            if status in counts:
+                counts[status] += 1
+        return {"total": len(rows), "counts": counts}
 
     def get_entry(self, entry_id: int) -> dict[str, Any] | None:
         return store.find(MODULE, entry_id)

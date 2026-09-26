@@ -19,15 +19,43 @@ STATUSES = ["留存中", "即将到期", "已处置", "已延期"]
 @router.get("", response_model=PageResult[dict])
 def list_entries(
     keyword: str | None = Query(default=None, description="按留存编号检索"),
+    sample_no: str | None = Query(default=None, description="按样品编号检索"),
+    location: str | None = Query(default=None, description="按留存位置检索"),
     status: str | None = Query(default=None, description="留存中、即将到期、已处置、已延期"),
     page: int = 1,
     size: int = 20,
 ) -> PageResult[dict]:
-    """按留存编号与状态过滤样品留存列表；没有数据时返回空页，不报错。"""
+    """按留存编号、样品编号、留存位置与状态过滤样品留存列表；没有数据时返回空页，不报错。"""
     if size > 200:
         raise HTTPException(status_code=400, detail="每页最多 200 条，请缩小分页范围")
-    items, total = service.list_entries(keyword=keyword, status=status, page=page, size=size)
+    items, total = service.list_entries(
+        keyword=keyword, sample_no=sample_no, location=location, status=status, page=page, size=size,
+    )
     return PageResult(items=items, total=total, page=page, size=size)
+
+
+@router.get("/summary")
+def summarize_entries(
+    keyword: str | None = Query(default=None, description="按留存编号检索"),
+    sample_no: str | None = Query(default=None, description="按样品编号检索"),
+    location: str | None = Query(default=None, description="按留存位置检索"),
+) -> dict[str, Any]:
+    """工作台概览：在当前检索条件下统计各状态数量，供留存中、即将到期、已处置卡片展示。"""
+    return service.summarize(keyword=keyword, sample_no=sample_no, location=location)
+
+
+@router.get("/export")
+def export_entries(
+    keyword: str | None = Query(default=None, description="按留存编号检索"),
+    sample_no: str | None = Query(default=None, description="按样品编号检索"),
+    location: str | None = Query(default=None, description="按留存位置检索"),
+    status: str | None = Query(default=None, description="留存中、即将到期、已处置、已延期"),
+) -> dict[str, Any]:
+    """导出样品留存清单：返回当前过滤条件下的全量数据。"""
+    items, total = service.list_entries(
+        keyword=keyword, sample_no=sample_no, location=location, status=status, page=1, size=10000,
+    )
+    return {"module": "sample_storage", "total": total, "items": items}
 
 
 @router.get("/{entry_id}", response_model=dict)
@@ -56,10 +84,3 @@ def run_action(entry_id: int, payload: EntryPayload) -> ActionResult:
     if entry is None:
         return ActionResult(ok=False, message=message)
     return ActionResult(ok=True, message=message, entry=entry)
-
-
-@router.get("/export")
-def export_entries() -> dict[str, Any]:
-    """导出样品留存清单：返回当前过滤条件下的全量数据。"""
-    items, total = service.list_entries(page=1, size=10000)
-    return {"module": "sample_storage", "total": total, "items": items}

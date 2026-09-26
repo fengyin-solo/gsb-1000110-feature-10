@@ -33,3 +33,15 @@ body { margin: 0; background: #f6f8fb; color: #1f2937; }
 .link { border: none; background: none; color: var(--brand); cursor: pointer; padding: 0; }
 .page-foot { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--muted); }
 .error-text { color: #b42318; }
+/* 样品留存工作台：可点击的概览卡片、关键列与状态徽章 */
+.stat-card.clickable { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.stat-card.clickable:hover { border-color: var(--brand); }
+.stat-card.active { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+th.key-col { background: #eef4ff; }
+td.key-col { font-weight: 600; color: #0f172a; background: #f8fafc; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 400; }
+.pill.is-active { background: #e7f6ec; color: #157347; }
+.pill.is-warning { background: #fdf0e0; color: #b45309; }
+.pill.is-done { background: #eceff3; color: #64748b; }
+.pill.is-extended { background: #efe9fd; color: #6d28d9; }
+.filter-item select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
